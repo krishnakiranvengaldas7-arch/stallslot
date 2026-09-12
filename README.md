@@ -28,3 +28,23 @@ Run `python3 -m http.server 8000 --directory dist` and open http://localhost:800
 ## Verification
 
 On 12 September 2026 the public Render demo was checked through a complete sample request, approval, simulated deposit confirmation and map update for stall B09.
+
+## Private trial implementation (pending Supabase connection)
+
+`dist/trial.html` adds an invitation-only workspace alongside the existing public demo. It is intentionally disabled while `dist/config.js` is empty. Do not describe this as a live booking service until a Supabase project is connected and the hosted acceptance checks pass.
+
+- Persistent requests, approval, deposit acknowledgement and retained released-booking history in PostgreSQL.
+- Vendor/organiser roles assigned by the project owner per event. No browser-controlled role assignment.
+- Atomic stall requests, one active request per stall and per vendor, and transitions tied to a booking UUID to reject stale approvals.
+- Other vendors see availability only; private names and booking identifiers are returned only to the request owner or event organiser.
+- Action audit records and a read-only fallback when database settings are missing.
+
+See [Supabase setup and acceptance checks](supabase/SETUP.md). The account onboarding, hosted auth testing and database connection are still pending. This is a practice trial, not ready for a paid event.
+
+### Build and tests
+
+Node 22+, then `npm ci`, `npm run build`, `npm run check`, `npm test`. The bundled client is committed so the existing Render static configuration can still publish `dist` without building. Rebuild `dist/backend.js` after changing `src/backend.js` or upgrading dependencies.
+
+`npm test` executes the real migration in PGlite and checks role restrictions, private-data filtering, duplicate constraints, transitions, audit records and persistence after restart. PGlite serialises queries; it does not prove contention between two PostgreSQL connections.
+
+`npm run test:concurrency` launches a disposable native PostgreSQL instance and verifies that a second connection waits on a held stall lock, then fails after the winning transaction commits. It requires a non-root user and native PostgreSQL support. GitHub Actions runs both test groups. A cloud/browser end-to-end pass is still required after configuring Supabase.
