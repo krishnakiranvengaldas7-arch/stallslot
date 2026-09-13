@@ -13,9 +13,13 @@ This is a fictional demo. State exists only in the current browser page and rese
 ## Files
 
 - `dist/index.html`: document and navigation
-- `dist/styles.css`: responsive visual styling
+- `dist/styles.css`, `dist/trial.css`, `dist/experience.css`: shared responsive visual styling
 - `dist/domain.js`: validated sample booking model
-- `dist/app.js`: vendor map and organiser interactions
+- `dist/demo-backend.js`: account-free, page-memory demo adapter; never connects to Supabase
+- `dist/trial.js`: shared event, map/list, request/review, booking and organiser interface
+- `dist/app.js`: retained legacy demo implementation, no longer loaded by either page
+
+The public demo uses the same booking screens as the private workspace. A clearly labelled role switch lets visitors request a space, approve it as the organiser and simulate deposit confirmation. The demo starts fresh on reload and does not contact real organisers. On phones, stall browsing defaults to a list with a sticky selection summary; Map remains available. The sample has 24 stalls; private organisers can configure 1–100.
 
 ## Hosting
 

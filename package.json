@@ -6,7 +6,7 @@
   "scripts": {
     "build": "esbuild src/backend.js --bundle --minify --format=iife --outfile=dist/backend.js",
     "test": "node --test tests/*.test.cjs",
-    "check": "node --check dist/trial.js && node --check dist/app.js",
+    "check": "node --check dist/trial.js && node --check dist/demo-backend.js && node --check dist/app.js",
     "test:concurrency": "node tests/concurrency.cjs"
   },
   "repository": {

@@ -1,0 +1,30 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+require('../dist/domain.js');
+const {createDemoBackend}=require('../dist/demo-backend.js');
+test('public demo completes request, approval and confirmation without an account',async()=>{
+ const demo=createDemoBackend();
+ const data={name:'Sample Vendor',business:'Sample Studio',category:'Art & craft'};
+ await demo.request('B09',data);
+ assert.equal(demo.list().find(s=>s.mine).status,'requested');
+ await assert.rejects(demo.request('B10',data),/already/);
+ await assert.rejects(demo.change('B09','approve'),/organiser/);
+ demo.setRole('organiser');
+ await assert.rejects(demo.change('B09','confirm',true),/Approve/);
+ await demo.change('B09','approve');
+ await assert.rejects(demo.change('B09','confirm',false),/Verify/);
+ await demo.change('B09','confirm',true);
+ demo.setRole('vendor');
+ assert.equal(demo.get('B09').status,'booked');
+ assert.equal(demo.get('B09').depositVerified,true);
+ assert.match(demo.get('B09').bookingId,/DEMO-/);
+ assert.equal(createDemoBackend().get('B09').status,'available');
+});
+test('declined demo request frees the vendor to choose again; food categories remain enforced',async()=>{
+ const demo=createDemoBackend(),data={name:'Sample Vendor',business:'Sample Studio',category:'Art & craft'};
+ await assert.rejects(demo.request('B20',data),/category/);
+ await demo.request('B09',data);demo.setRole('organiser');await demo.change('B09','release');
+ demo.setRole('vendor');await demo.request('B10',data);
+ assert.equal(demo.list().filter(s=>s.mine).length,1);
+ assert.equal(demo.get('B10').status,'requested');
+});
