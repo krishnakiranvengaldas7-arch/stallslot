@@ -1,6 +1,6 @@
 // Separate PostgreSQL connections are needed to exercise real row-lock contention.
 const assert=require('node:assert/strict');
-const {mkdtemp,readFile,rm}=require('node:fs/promises');
+const {mkdtemp,readFile,rm,readdir}=require('node:fs/promises');
 const {tmpdir}=require('node:os');
 const {join}=require('node:path');
 (async()=>{
@@ -12,6 +12,7 @@ const {join}=require('node:path');
  await server.initialise();await server.start();admin=server.getPgClient();await admin.connect();
  await admin.query("create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;grant usage on schema auth to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;");
  await admin.query(await readFile('supabase/001_trial.sql','utf8'));
+ for(const file of (await readdir('supabase/migrations')).filter(f=>f.endsWith('.sql')).sort())await admin.query(await readFile('supabase/migrations/'+file,'utf8'));
  const event=(await admin.query('update events set is_open=true returning id')).rows[0].id;
  const users=['00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002'];
  for(const id of users){await admin.query('insert into auth.users values($1)',[id]);await admin.query("insert into event_members values($1,$2,'vendor')",[event,id]);}

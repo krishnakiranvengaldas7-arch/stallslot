@@ -52,3 +52,10 @@ Official references checked 12 September 2026:
 - https://supabase.com/docs/guides/database/postgres/row-level-security
 - https://supabase.com/docs/guides/database/functions
 - https://supabase.com/docs/guides/auth/auth-smtp
+# Current verification and layouts
+
+The two practice Auth accounts are configured. The live vendor request → organiser approval → simulated deposit flow passed for B09 on 13 September 2026, including reload persistence and vendor confirmation. The event is closed again and the sample booking remains saved.
+
+The configurable layout update adds `supabase/migrations/20260913124024_configurable_layouts.sql`. Apply it once after the original migration. Organisers edit event details and 1–100 stalls in the Layout tab while requests are closed. Existing booking history locks that stall's details and prevents removal. Grid replacement is only for layouts with no booking history. Membership assignment and opening/closing requests remain owner-managed; editing a layout does not open the event.
+
+The original setup notes below describe initial provisioning; do not recreate the existing project, users or B09 booking.

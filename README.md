@@ -29,9 +29,9 @@ Run `python3 -m http.server 8000 --directory dist` and open http://localhost:800
 
 On 12 September 2026 the public Render demo was checked through a complete sample request, approval, simulated deposit confirmation and map update for stall B09.
 
-## Private trial implementation (connected; account setup pending)
+## Private trial workspace
 
-`dist/trial.html` adds an invitation-only workspace alongside the existing public demo. Its public configuration points to the StallSlot Supabase project in Mumbai. The migration has been applied and hosted database permission checks passed on 13 September 2026. The event remains closed, with no members or bookings, until practice accounts are created and sign-in is verified. Do not describe this as a live booking service yet.
+`dist/trial.html` is the invitation-only workspace alongside the public demo. Its public configuration points to the StallSlot Supabase project in Mumbai. The live two-account browser flow passed on 13 September 2026: the vendor requested B09, the organiser approved it and recorded a simulated deposit, and both accounts saw the saved booking after refresh. Requests were closed again afterward. This is a practice trial, not a live paid event.
 
 - Persistent requests, approval, deposit acknowledgement and retained released-booking history in PostgreSQL.
 - Vendor/organiser roles assigned by the project owner per event. No browser-controlled role assignment.
@@ -39,7 +39,13 @@ On 12 September 2026 the public Render demo was checked through a complete sampl
 - Other vendors see availability only; private names and booking identifiers are returned only to the request owner or event organiser.
 - Action audit records and a read-only fallback when database settings are missing.
 
-See [Supabase setup and acceptance checks](supabase/SETUP.md). Account onboarding and hosted Auth/browser testing are still pending. This is a practice trial, not ready for a paid event.
+The vendor experience has Event, Choose stall and My booking navigation, zone/availability filters, a details-and-review flow, and booking progress. The organiser's Layout tab supports 1–100 stalls, individual prices, dimensions, electricity, vendor categories, zones, and X/Y positions. Grid generation is available when no stall has booking history. Maps are schematic rather than scaled venue or safety plans. There is no public event directory or automatic payment collection.
+
+Layout saves require organiser membership and closed requests. They reject overlaps, invalid input and stale revisions. Stalls with any booking history cannot be changed or removed; unrelated unbooked stalls remain editable. Vendor requests include the reviewed layout revision so changed terms require a new review. The existing 24-stall event is preserved rather than replaced by a generated layout.
+
+Hosted layout verification passed in a rollback-only transaction: the organiser saved a 25th stall and read revision 2 through the workspace API; rollback retained the original 24 stalls and booked B09. Security advisors report the existing RPC-only tables as informational (no direct client grants), and warn that leaked-password protection is disabled. That feature requires Supabase Pro; the project remains on the requested free plan. [Password protection documentation](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+
+Apply `supabase/001_trial.sql` followed by files in `supabase/migrations/` in order for a new database. For the existing hosted database, apply only new migrations. See [Supabase setup and acceptance checks](supabase/SETUP.md).
 
 ### Build and tests
 
@@ -47,6 +53,6 @@ Node 22+, then `npm ci`, `npm run build`, `npm run check`, `npm test`. The bundl
 
 `npm test` executes the real migration in PGlite and checks role restrictions, private-data filtering, duplicate constraints, transitions, audit records and persistence after restart. PGlite serialises queries; it does not prove contention between two PostgreSQL connections.
 
-`npm run test:concurrency` launches a disposable native PostgreSQL instance and verifies that a second connection waits on a held stall lock, then fails after the winning transaction commits. It requires a non-root user and native PostgreSQL support. GitHub Actions runs both test groups. A cloud/browser end-to-end pass is still required after configuring Supabase.
+`npm run test:concurrency` launches a disposable native PostgreSQL instance and verifies that a second connection waits on a held stall lock, then fails after the winning transaction commits. It requires a non-root user and native PostgreSQL support. GitHub Actions runs both test groups against every migration. `tests/layout.test.cjs` checks configurable layouts, role boundaries, stale revisions and preservation of booking terms.
 
-`tests/hosted-check.sql` passed against the hosted Supabase database, checking the request-to-confirmation flow, anonymous and vendor permission denial, private detail filtering, duplicate rejection and audit records. Its test data was rolled back; the project contains only the closed fictional event and 24 empty stalls. This SQL test does not simulate a real Auth sign-in.
+`tests/hosted-check.sql` previously passed against the hosted Supabase database with its test data rolled back. The later real Auth/browser test retained the fictional B09 booking. Do not rerun fixtures as migrations or delete retained sample history to test layout replacement.
