@@ -1,6 +1,8 @@
 # Connect the private trial
 
-Status: implementation complete; hosted Supabase Auth and database integration are not yet connected or verified. Keep the public demo available until the checks below pass. No payment processing is included.
+Status on 13 September 2026: project `sbdinxzgjfdxbwifryge` is active in Mumbai on the $0/month plan; database migration and public client configuration are complete. Hosted database permission checks passed and all disposable fixtures were rolled back. There are no Auth accounts or event memberships yet. The practice event remains closed. Auth sign-in and the full browser flow remain to be verified. No payment processing is included.
+
+Project creation and migration steps 1–2 below are complete: **do not create a duplicate project or rerun the migration**. Continue at account setup, step 3. The schema's privileged functions live in `private`; the public API consists of invoker wrappers with explicit execution grants. The security advisor returned no warnings or errors. Its three informational no-policy notices are intentional for the RPC-only tables `stalls`, `bookings` and `booking_audit`, whose direct browser privileges are revoked. Reference: https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy
 
 ## Owner setup (no secrets in GitHub or chat)
 

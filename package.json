@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/krishnakiranvengaldas7-arch/stallslot#readme",
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0"
+    "@supabase/supabase-js": "2.116.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

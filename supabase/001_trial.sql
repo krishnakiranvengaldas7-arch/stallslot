@@ -57,7 +57,7 @@ create policy own_membership on public.event_members for select to authenticated
 create policy member_event on public.events for select to authenticated using(exists(select 1 from public.event_members m where m.event_id=id and m.user_id=auth.uid()));
 
 -- Functions are the only API for stall data. No client receives a service-role key.
-create function public.trial_stalls(p_event uuid) returns jsonb
+create function private.trial_stalls(p_event uuid) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare v_role text; v_result jsonb;
 begin
@@ -77,7 +77,7 @@ begin
  return coalesce(v_result,'[]'::jsonb);
 end $$;
 
-create function public.request_stall(p_event uuid,p_stall text,p_name text,p_business text,p_category text) returns uuid
+create function private.request_stall(p_event uuid,p_stall text,p_name text,p_business text,p_category text) returns uuid
 language plpgsql security definer set search_path = '' as $$
 declare v_booking uuid; v_open boolean;
 begin
@@ -105,7 +105,7 @@ begin
  return v_booking;
 end $$;
 
-create function public.change_booking(p_booking uuid,p_action text,p_verified boolean default false) returns void
+create function private.change_booking(p_booking uuid,p_action text,p_verified boolean default false) returns void
 language plpgsql security definer set search_path = '' as $$
 declare b public.bookings%rowtype;
 begin
@@ -125,6 +125,15 @@ begin
  end if;
  insert into public.booking_audit(booking_id,actor_id,action) values(b.id,auth.uid(),p_action);
 end $$;
+grant usage on schema private to authenticated;
+revoke all on function private.trial_stalls(uuid),private.request_stall(uuid,text,text,text,text),private.change_booking(uuid,text,boolean) from public,anon;
+grant execute on function private.trial_stalls(uuid),private.request_stall(uuid,text,text,text,text),private.change_booking(uuid,text,boolean) to authenticated;
+create function public.trial_stalls(p_event uuid) returns jsonb
+language sql security invoker set search_path = '' as $$ select private.trial_stalls(p_event) $$;
+create function public.request_stall(p_event uuid,p_stall text,p_name text,p_business text,p_category text) returns uuid
+language sql security invoker set search_path = '' as $$ select private.request_stall(p_event,p_stall,p_name,p_business,p_category) $$;
+create function public.change_booking(p_booking uuid,p_action text,p_verified boolean default false) returns void
+language sql security invoker set search_path = '' as $$ select private.change_booking(p_booking,p_action,p_verified) $$;
 revoke all on function public.trial_stalls(uuid) from public,anon;
 revoke all on function public.request_stall(uuid,text,text,text,text) from public,anon;
 revoke all on function public.change_booking(uuid,text,boolean) from public,anon;
