@@ -43,6 +43,8 @@ The vendor experience has Event, Choose stall and My booking navigation, zone/av
 
 Layout saves require organiser membership and closed requests. They reject overlaps, invalid input and stale revisions. Stalls with any booking history cannot be changed or removed; unrelated unbooked stalls remain editable. Vendor requests include the reviewed layout revision so changed terms require a new review. The existing 24-stall event is preserved rather than replaced by a generated layout.
 
+Hosted layout verification passed in a rollback-only transaction: the organiser saved a 25th stall and read revision 2 through the workspace API; rollback retained the original 24 stalls and booked B09. Security advisors report the existing RPC-only tables as informational (no direct client grants), and warn that leaked-password protection is disabled. That feature requires Supabase Pro; the project remains on the requested free plan. [Password protection documentation](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+
 Apply `supabase/001_trial.sql` followed by files in `supabase/migrations/` in order for a new database. For the existing hosted database, apply only new migrations. See [Supabase setup and acceptance checks](supabase/SETUP.md).
 
 ### Build and tests

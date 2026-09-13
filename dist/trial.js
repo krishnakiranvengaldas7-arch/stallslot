@@ -81,7 +81,7 @@ function renderBooking(){
 function reviewRequest(){
  const {s,data,revision}=requestDraft;
  modal('Review your request',`<p class="dialog-sub">Check the details before sending. This is a request, not an instant booking.</p><dl class="review-list"><div><dt>Event</dt><dd>${esc(backend.event().name)}</dd></div><div><dt>Stall</dt><dd>${esc(s.id)} · ${esc(s.zone)} · ${esc(s.size)}</dd></div><div><dt>Business</dt><dd>${esc(data.business)} · ${esc(data.category)}</dd></div><div><dt>Total price</dt><dd>${money(s.price)}</dd></div><div><dt>Deposit after approval</dt><dd>${money(s.price/2)}</dd></div><div><dt>Due now</dt><dd>₹0</dd></div></dl><form id="review-form"><p class="fine">${backend.event().is_test?'Practice request. No real payments.':'Your organiser must approve and verify the deposit before the stall is confirmed.'}</p><p class="form-error" role="alert"></p><div class="row-actions"><button type="button" class="small-button" id="edit-request">Edit details</button><button class="primary">Send request →</button></div></form>`);
- document.getElementById('edit-request').onclick=()=>requestDialog(s,data);
+ document.getElementById('edit-request').onclick=()=>{const current=backend.list().find(x=>x.id===s.id);if(!current){dialog.close();view='vendor';render();notify('That stall is no longer in the layout. Choose another space.');return;}requestDialog(current,data);};
  document.getElementById('review-form').onsubmit=e=>{e.preventDefault();submit(e.target,async()=>{const result=await backend.request(s.id,data,revision);view='booking';requestDraft=null;return result.refreshPending?'Request saved. Refresh to see the latest status.':'Request sent. Track organiser approval here.';},'Request saved.');};
 }
 function layoutFields(s){return ['id','price','x','y','width_ft','depth_ft','power','zone','stall_type'].reduce((o,k)=>(o[k]=s[k],o),{});}
@@ -112,12 +112,12 @@ function renderLayout(){
   if(busy||!captureStall())return;
   const overlap=draft.stalls.some((a,i)=>draft.stalls.slice(i+1).some(b=>Math.abs(a.x-b.x)<8&&Math.abs(a.y-b.y)<8));
   if(overlap){document.getElementById('layout-error').textContent='Stalls overlap. Move them apart before saving.';return;}
-  busy=true;document.getElementById('save-layout').disabled=true;
+  busy=true;main.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=true);
   try{
    const fresh=await backend.saveLayout(draft.details,draft.stalls.map(layoutFields),draft.revision);
    if(!fresh){draft=null;view='event';panel('Layout saved.','Your layout was saved, but the latest view could not load. Reload this page before editing again.');return;}
    draft=null;renderLayout();notify('Layout saved. Your invited vendors will see the updated map.');
-  }catch(err){document.getElementById('layout-error').textContent=err.message;}finally{busy=false;const b=document.getElementById('save-layout');if(b)b.disabled=backend.event().is_open;}
+  }catch(err){renderLayout();document.getElementById('layout-error').textContent=err.message;}finally{busy=false;const b=document.getElementById('save-layout');if(b)b.disabled=backend.event().is_open;}
  };
 }
 function captureStall(){
