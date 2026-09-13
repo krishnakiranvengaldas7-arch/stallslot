@@ -8,7 +8,7 @@ window.createTrialBackend = (config) => {
  const client = createClient(config.url, config.publishableKey);
  let event, role, rows = [];
  async function load() {
-  const {data: events,error} = await client.from('events').select('id,name,is_open,is_test').eq('slug',config.eventSlug).limit(1);
+  const {data: events,error} = await client.from('events').select('id,name,is_open,is_test,venue,event_date,description,layout_revision').eq('slug',config.eventSlug).limit(1);
   if(error) throw error;
   event=events?.[0];
   if(!event) throw Error('This account has not been invited to the trial. Ask Krishna for access.');
@@ -20,14 +20,20 @@ window.createTrialBackend = (config) => {
   await refresh();
  }
  async function refresh(){
-  const {data,error}=await client.rpc('trial_stalls',{p_event:event.id});
+  const {data,error}=await client.rpc('trial_workspace',{p_event:event.id});
   if(error) throw error;
-  rows=data.map(s=>{const n=Number(s.id.slice(1)),i=n-1;return {...s,row:Math.floor(i/6),col:i%6,power:n>18,size:n>18?'10 × 10 ft':'8 × 8 ft',zone:n>18?'South · food lane':n<=6?'North edge':n<=12?'West edge':'East edge',reference:s.bookingId||''};});
+  event={...event,...data.event};
+  rows=data.stalls.map(s=>({...s,size:`${s.width_ft} × ${s.depth_ft} ft`,reference:s.bookingId||''}));
  }
  return {client,load,refresh,event:()=>event,role:()=>role,
  list:()=>rows.map(s=>({...s})),get:id=>{const s=rows.find(s=>s.id===id);if(!s)throw Error('Stall not found.');return {...s};},
- async request(id,data){
-  const {data:bookingId,error}=await client.rpc('request_stall',{p_event:event.id,p_stall:id,p_name:data.name,p_business:data.business,p_category:data.category});
+ async saveLayout(details,stalls,revision){
+  const {error}=await client.rpc('save_trial_layout',{p_event:event.id,p_revision:revision,p_details:details,p_stalls:stalls});
+  if(error)throw error;
+  try {await refresh();return true;}catch{return false;}
+ },
+ async request(id,data,revision){
+  const {data:bookingId,error}=await client.rpc('request_stall_v2',{p_event:event.id,p_stall:id,p_name:data.name,p_business:data.business,p_category:data.category,p_revision:revision});
   if(error) throw error;
   // The write is committed even if a subsequent network refresh fails.
   const result={id,reference:bookingId};

@@ -1,7 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {PGlite}=require('@electric-sql/pglite');
-const {readFile,mkdtemp,rm}=require('node:fs/promises');
+const {readFile,mkdtemp,rm,readdir}=require('node:fs/promises');
 const {tmpdir}=require('node:os');
 const {join}=require('node:path');
 
@@ -11,6 +11,7 @@ test('trial database: permissions, state transitions, privacy and restart durabi
  try{
  await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$; grant usage on schema auth to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;`);
  await db.exec(await readFile('supabase/001_trial.sql','utf8'));
+ for(const file of (await readdir('supabase/migrations')).filter(f=>f.endsWith('.sql')).sort())await db.exec(await readFile('supabase/migrations/'+file,'utf8'));
  const event=(await db.query('select id from events')).rows[0].id;
  for(const id of [vendor,other,org,outsider])await db.query('insert into auth.users values($1)',[id]);
  for(const [id,role] of [[vendor,'vendor'],[other,'vendor'],[org,'organiser']])await db.query('insert into event_members values($1,$2,$3)',[event,id,role]);
